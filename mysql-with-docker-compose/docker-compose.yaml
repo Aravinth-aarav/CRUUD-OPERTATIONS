@@ -1,15 +1,15 @@
-version: '3.8'
+
 
 services:
   mysql:
-    image: mysql:8.0      # Use the official MySQL 8.0 image
+    image: mariadb:latest      # Use MariaDB to avoid exec format error on WSL2
     container_name: mysql_container
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword               # Root user's password (change for production)
       MYSQL_DATABASE: crud_operations                     # Database name
-      MYSQL_USER: myuser                           # Regular user
-      MYSQL_PASSWORD: mypassword                    # Password for `MYSQL_USER`
+      MYSQL_USER: root                           # Regular user
+      MYSQL_PASSWORD: root                    # Password for `MYSQL_USER`
     ports:
       - "3306:3306"                                   # Expose MySQL on port 3306
     volumes:
