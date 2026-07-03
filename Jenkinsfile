@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         // Define your Docker Hub Registry (Change 'aravinthaaarav' to your Docker Hub username)
-        DOCKER_REGISTRY  = 'aravinthaaarav/crud-operations'
-        DOCKER_HUB_CREDS = credentials('docker-hub-credentials') // Jenkins Credentials ID for Docker Hub
+        DOCKER_REGISTRY  = 'aravinth2005/crud-operations'
+        DOCKER_HUB_CREDS = credentials('Samy@1234') // Jenkins Credentials ID for Docker Hub
     }
 
     stages {
@@ -32,7 +32,7 @@ pipeline {
         stage('Push Images') {
             steps {
                 script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
+                    docker.withRegistry('https://index.docker.io/v1/', 'Samy@1234') {
                         echo 'Pushing Backend Image to Docker Hub...'
                         dockerBackend.push()
 
