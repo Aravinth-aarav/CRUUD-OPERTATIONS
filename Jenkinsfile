@@ -22,27 +22,22 @@ pipeline {
         // Stage 2: Build the Docker images using the Dockerfiles in run_mern_stack_with_docker_compose
         stage('Build Images') {
             steps {
-                script {
-                    echo 'Building Backend Docker Image...'
-                    dockerBackend = docker.build("${DOCKER_REGISTRY}-backend:latest", "./run_mern_stack_with_docker_compose/backend")
+                echo 'Building Backend Docker Image...'
+                sh "docker build -t ${DOCKER_REGISTRY}-backend:latest ./run_mern_stack_with_docker_compose/backend"
 
-                    echo 'Building Frontend Docker Image...'
-                    dockerFrontend = docker.build("${DOCKER_REGISTRY}-frontend:latest", "./run_mern_stack_with_docker_compose/frontend")
-                }
+                echo 'Building Frontend Docker Image...'
+                sh "docker build -t ${DOCKER_REGISTRY}-frontend:latest ./run_mern_stack_with_docker_compose/frontend"
             }
         }
 
         // Stage 3: Authenticate and Push the images to Docker Hub
         stage('Push Images') {
             steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
-                        echo 'Pushing Backend Image to Docker Hub...'
-                        dockerBackend.push()
-
-                        echo 'Pushing Frontend Image to Docker Hub...'
-                        dockerFrontend.push()
-                    }
+                echo 'Logging into Docker Hub and pushing images...'
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
+                    sh "docker push ${DOCKER_REGISTRY}-backend:latest"
+                    sh "docker push ${DOCKER_REGISTRY}-frontend:latest"
                 }
             }
         }
