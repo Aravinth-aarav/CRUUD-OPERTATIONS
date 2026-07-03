@@ -4,7 +4,7 @@ pipeline {
     environment {
         // Define your Docker Hub Registry (Change to your Docker Hub username)
         DOCKER_REGISTRY  = 'aravinth2005/crud-operations'
-        DOCKER_HUB_CREDS = credentials('Samy@1234') // Jenkins Credentials ID for Docker Hub
+        DOCKER_HUB_CREDS = credentials('docker-hub-credentials') // Jenkins Credentials ID for Docker Hub
         
         // Define your EC2 details
         EC2_IP           = 'YOUR_EC2_PUBLIC_IP'
@@ -36,7 +36,7 @@ pipeline {
         stage('Push Images') {
             steps {
                 script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'Samy@1234') {
+                    docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
                         echo 'Pushing Backend Image to Docker Hub...'
                         dockerBackend.push()
 
@@ -72,10 +72,6 @@ pipeline {
     }
 
     post {
-        always {
-            // Clean workspace to save disk space on Jenkins node
-            cleanWs()
-        }
         success {
             echo 'CI/CD Pipeline executed successfully!'
         }
