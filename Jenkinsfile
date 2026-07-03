@@ -23,10 +23,10 @@ pipeline {
         stage('Build Images') {
             steps {
                 echo 'Building Backend Docker Image...'
-                sh "docker build -t ${DOCKER_REGISTRY}-backend:latest ./run_mern_stack_with_docker_compose/backend"
+                bat "docker build -t ${DOCKER_REGISTRY}-backend:latest ./run_mern_stack_with_docker_compose/backend"
 
                 echo 'Building Frontend Docker Image...'
-                sh "docker build -t ${DOCKER_REGISTRY}-frontend:latest ./run_mern_stack_with_docker_compose/frontend"
+                bat "docker build -t ${DOCKER_REGISTRY}-frontend:latest ./run_mern_stack_with_docker_compose/frontend"
             }
         }
 
@@ -35,9 +35,9 @@ pipeline {
             steps {
                 echo 'Logging into Docker Hub and pushing images...'
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
-                    sh "docker push ${DOCKER_REGISTRY}-backend:latest"
-                    sh "docker push ${DOCKER_REGISTRY}-frontend:latest"
+                    bat "echo %DOCKER_PASS%| docker login -u %DOCKER_USER% --password-stdin"
+                    bat "docker push ${DOCKER_REGISTRY}-backend:latest"
+                    bat "docker push ${DOCKER_REGISTRY}-frontend:latest"
                 }
             }
         }
@@ -47,20 +47,14 @@ pipeline {
             steps {
                 echo 'Deploying to remote EC2 instance...'
                 sshagent(credentials: [SSH_KEY_ID]) {
-                    // Ensure the deployment directory exists on the EC2 host
-                    sh "ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} 'mkdir -p /home/ubuntu/app'"
+                    // Ensure the deployment directory exists on the EC2 host (runs SSH command to Linux EC2)
+                    bat "ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} \"mkdir -p /home/ubuntu/app\""
                     
-                    // Copy the updated docker-compose.yaml to the EC2 server
-                    sh "scp -o StrictHostKeyChecking=no ./run_mern_stack_with_docker_compose/docker-compose.yaml ubuntu@${EC2_IP}:/home/ubuntu/app/docker-compose.yaml"
+                    // Copy the updated docker-compose.yaml to the EC2 server (SCP transfer from Windows to Linux)
+                    bat "scp -o StrictHostKeyChecking=no ./run_mern_stack_with_docker_compose/docker-compose.yaml ubuntu@${EC2_IP}:/home/ubuntu/app/docker-compose.yaml"
                     
                     // SSH into the EC2 instance, pull the latest images from Docker Hub, and restart containers
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} "
-                            cd /home/ubuntu/app &&
-                            docker compose pull &&
-                            docker compose up -d --remove-orphans
-                        "
-                    """
+                    bat "ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} \"cd /home/ubuntu/app && docker compose pull && docker compose up -d --remove-orphans\""
                 }
             }
         }
