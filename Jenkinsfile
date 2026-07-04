@@ -7,7 +7,7 @@ pipeline {
         DOCKER_HUB_CREDS = credentials('docker-hub-credentials') // Jenkins Credentials ID for Docker Hub
         
         // Define your EC2 details
-        EC2_IP           = 'YOUR_EC2_PUBLIC_IP'
+        EC2_IP           = '13.201.2.39'
         SSH_KEY_ID       = 'ec2-ssh-key' // Jenkins Credentials ID for your EC2 .pem private key
     }
 
@@ -69,3 +69,4 @@ pipeline {
         }
     }
 }
+
