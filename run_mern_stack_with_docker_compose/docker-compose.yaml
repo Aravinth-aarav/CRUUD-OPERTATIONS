@@ -47,9 +47,7 @@ services:
 
   # Node.js Backend Service
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: aravinth2005/crud-operations-backend:latest
     container_name: backend-api
     restart: unless-stopped
     ports:
@@ -59,8 +57,6 @@ services:
       - DB_USER=root
       - DB_PASSWORD=root
       - DB_DATABASE=crud_operations
-    volumes:
-      - ./server:/usr/src/app
     depends_on:
       mysql:
         condition: service_healthy # Wait for MySQL to be healthy before starting the backend
@@ -69,15 +65,11 @@ services:
 
   # React Frontend Service
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: aravinth2005/crud-operations-frontend:latest
     container_name: frontend-app
     restart: unless-stopped
     ports:
       - "5000:5000"
-    environment:
-      - VITE_API_URL=http://localhost:3000 # Change to your backend API URL Like http://192.168.81.207:3000
     depends_on:
       - backend
     networks:

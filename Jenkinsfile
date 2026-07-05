@@ -26,7 +26,7 @@ pipeline {
                 bat "docker build -t ${DOCKER_REGISTRY}-backend:latest ./run_mern_stack_with_docker_compose/backend"
 
                 echo 'Building Frontend Docker Image...'
-                bat "docker build -t ${DOCKER_REGISTRY}-frontend:latest ./run_mern_stack_with_docker_compose/frontend"
+                bat "docker build --build-arg VITE_API_URL=http://${EC2_IP}:3000 -t ${DOCKER_REGISTRY}-frontend:latest ./run_mern_stack_with_docker_compose/frontend"
             }
         }
 
