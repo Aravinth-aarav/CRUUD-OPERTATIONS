@@ -63,8 +63,8 @@ pipeline {
                     // Copy the updated docker-compose.yaml to the EC2 server (SCP transfer from Windows to Linux)
                     bat "scp -i \"%KEY_FILE%\" -o StrictHostKeyChecking=no ./run_mern_stack_with_docker_compose/docker-compose.yaml ubuntu@${EC2_IP}:/home/ubuntu/app/docker-compose.yaml"
                     
-                    // SSH into the EC2 instance, pull the latest images from Docker Hub, and restart containers
-                    bat "ssh -i \"%KEY_FILE%\" -o StrictHostKeyChecking=no ubuntu@${EC2_IP} \"cd /home/ubuntu/app && docker compose pull && docker compose up -d --remove-orphans\""
+                    // SSH into the EC2 instance, stop the old stack, remove any conflicting containers, pull the latest images, and start the new containers
+                    bat "ssh -i \"%KEY_FILE%\" -o StrictHostKeyChecking=no ubuntu@${EC2_IP} \"cd /home/ubuntu/app && docker compose down && docker rm -f mysql_container phpmyadmin_container backend-api frontend-app || true && docker compose pull && docker compose up -d --remove-orphans\""
                 }
             }
         }
