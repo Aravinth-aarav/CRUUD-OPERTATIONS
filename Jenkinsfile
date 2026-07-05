@@ -47,6 +47,16 @@ pipeline {
             steps {
                 echo 'Deploying to remote EC2 instance...'
                 withCredentials([sshUserPrivateKey(credentialsId: SSH_KEY_ID, keyFileVariable: 'KEY_FILE')]) {
+                    // Restrict permissions on the private key file for Windows SSH compatibility (chmod 600)
+                    powershell '''
+                        $path = $env:KEY_FILE
+                        $acl = Get-Acl $path
+                        $acl.SetAccessRuleProtection($true, $false)
+                        $rule = New-Object System.Security.AccessControl.FileSystemAccessRule($acl.Owner, "ReadAndExecute", "Allow")
+                        $acl.AddAccessRule($rule)
+                        Set-Acl $path $acl
+                    '''
+
                     // Ensure the deployment directory exists on the EC2 host (runs SSH command to Linux EC2)
                     bat "ssh -i \"%KEY_FILE%\" -o StrictHostKeyChecking=no ubuntu@${EC2_IP} \"mkdir -p /home/ubuntu/app\""
                     
