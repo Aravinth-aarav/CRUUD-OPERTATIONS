@@ -19,14 +19,14 @@ pipeline {
             }
         }
 
-        // Stage 2: Build the Docker images using the Dockerfiles in run_mern_stack_with_docker_compose
+        // Stage 2: Build the Docker images using the Dockerfiles at the root of the project
         stage('Build Images') {
             steps {
                 echo 'Building Backend Docker Image...'
-                bat "docker build -t ${DOCKER_REGISTRY}-backend:latest ./run_mern_stack_with_docker_compose/backend"
+                bat "docker build -t ${DOCKER_REGISTRY}-backend:latest ./backend"
 
                 echo 'Building Frontend Docker Image...'
-                bat "docker build --build-arg VITE_API_URL=http://${EC2_IP}:3000 -t ${DOCKER_REGISTRY}-frontend:latest ./run_mern_stack_with_docker_compose/frontend"
+                bat "docker build --build-arg VITE_API_URL=http://${EC2_IP}:3000 -t ${DOCKER_REGISTRY}-frontend:latest ./frontend"
             }
         }
 
