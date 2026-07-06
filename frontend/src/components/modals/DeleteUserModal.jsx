@@ -1,117 +1,116 @@
-//importing neccessary libraries for this modal which will delete users from the database and we will be using this as a functional component for table
 import { useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
+import { AlertTriangle } from "lucide-react";
 
-//starting of the functional component which will delete users
-function DeleteUserModal() {
-  //using state variables for access of the input fields
-  const [id, setId] = useState("");
+function DeleteUserModal({ user, onDeleteSuccess }) {
+  const [loading, setLoading] = useState(false);
 
-  //function for dynamic change of values for the input fields of id field
-  const handleIdChange = (event) => {
-    setId(event.target.value);
-  };
-
-  //creation of an async await function which first checks if the input is filled, sends a delete request to the server using axios then shows a toast message if is successful or not
   const handleDeleteUser = async () => {
-    //input check
-    if (!id || id === "") {
-      toast.error("All Fields are Required.");
-      return;
-    }
+    if (!user) return;
+
+    setLoading(true);
     try {
-      //delete req to the server with data payload
+      const apiUrl = import.meta.env.VITE_API_URL;
       const res = await axios.request({
         method: "delete",
-        url: import.meta.env.VITE_API_URL,
-        data: { id }
+        url: apiUrl,
+        data: { id: user.id }
       });
 
-      //incase of success
       if (res.status === 200) {
-        console.log("User Deleted");
-        toast.success(`Id ${id} Deleted Successfully || Reloading to Update`);
+        toast.success(`User "${user.name}" deleted successfully`);
+        
+        // Notify parent list to remove user dynamically
+        onDeleteSuccess(user.id);
+
+        // Hide bootstrap modal
+        const modalElement = document.getElementById("DeleteUserModal");
+        if (window.bootstrap && modalElement) {
+          const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
+          if (modalInstance) modalInstance.hide();
+        }
       }
-
-      setId(""); //empty the fields after successful operation
-
-      //after 3 sec reload the page for users to view deletion
-      setTimeout(() => {
-        location.reload();
-      }, 3000);
-
     } catch (error) {
-      //incase of error
       console.error("Error Deleting User", error);
-      toast.error("Error Deleting User");
+      toast.error("Failed to delete user. Check server connection.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  //using bootstrap pre built components
   return (
-    <>
-      <button
-        type="button"
-        className="btn btn-danger"
-        data-bs-toggle="modal"
-        id="button"
-        data-bs-target="#DeleteUserModal"
-      >
-        <b>Delete User</b>
-      </button>
-
-      <div
-        className="modal fade"
-        id="DeleteUserModal"
-        tabIndex="-1"
-        aria-labelledby="DeleteUserModal"
-        aria-hidden="true"
-      >
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h1 className="modal-title fs-5" id="DeleteUserModal">
-                <b>Enter Id</b>
-              </h1>
-              <button
-                type="button"
-                className="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              ></button>
-            </div>
-            <div className="modal-body">
-              <div className="mb-3">
-                <label htmlFor="id" className="form-label">
-                  Id:
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="id"
-                  placeholder="Ex: 12"
-                  value={id}
-                  onChange={handleIdChange}
-                />
+    <div
+      className="modal fade"
+      id="DeleteUserModal"
+      tabIndex="-1"
+      aria-labelledby="DeleteUserModalLabel"
+      aria-hidden="true"
+    >
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title" id="DeleteUserModalLabel" style={{ fontWeight: "700" }}>
+              Confirm Deletion
+            </h5>
+            <button
+              type="button"
+              className="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div className="modal-body">
+            <div className="custom-alert info" style={{ backgroundColor: "rgba(239, 68, 68, 0.08)", borderColor: "rgba(239, 68, 68, 0.15)", color: "var(--danger)", marginBottom: "1.25rem" }}>
+              <AlertTriangle size={20} style={{ flexShrink: 0, marginTop: "2px" }} />
+              <div>
+                <strong style={{ display: "block", marginBottom: "0.25rem" }}>Warning: Destructive Action</strong>
+                Are you sure you want to permanently delete this user directory record? This action cannot be reversed.
               </div>
             </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={handleDeleteUser}
-                data-bs-dismiss="modal"
-              >
-                <b>Delete User</b>
-              </button>
+
+            <div style={{ padding: "0.5rem 0" }}>
+              <table className="table table-sm table-borderless" style={{ fontSize: "0.9rem", color: "var(--text-primary)" }}>
+                <tbody>
+                  <tr>
+                    <td style={{ color: "var(--text-secondary)", width: "30%", padding: "4px 0" }}>User ID:</td>
+                    <td style={{ fontWeight: "600", padding: "4px 0" }}><span className="id-badge">{user?.id}</span></td>
+                  </tr>
+                  <tr>
+                    <td style={{ color: "var(--text-secondary)", padding: "4px 0" }}>Full Name:</td>
+                    <td style={{ fontWeight: "600", padding: "4px 0" }}>{user?.name}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ color: "var(--text-secondary)", padding: "4px 0" }}>Email Address:</td>
+                    <td style={{ fontWeight: "600", padding: "4px 0" }}>{user?.email}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
+          </div>
+          <div className="modal-footer">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              data-bs-dismiss="modal"
+              style={{ borderRadius: "10px" }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger"
+              onClick={handleDeleteUser}
+              style={{ borderRadius: "10px", minWidth: "120px", fontWeight: "600" }}
+              disabled={loading}
+            >
+              {loading ? "Deleting..." : "Permanently Delete"}
+            </button>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
-//exporting the created function
 export default DeleteUserModal;

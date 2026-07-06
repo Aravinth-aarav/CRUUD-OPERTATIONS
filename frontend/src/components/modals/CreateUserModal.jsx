@@ -1,64 +1,83 @@
-//importing neccessary libraries for this modal which will add users to the database and we will be using this as a functional component for table
 import { useState } from "react";
 import { toast } from "sonner";
 import axios from "axios";
+import { UserPlus } from "lucide-react";
 
-//starting of the functional component which takes a argument inside for adding the user to the user aray for dynamic display witout any reload
 function CreateUserModal({ addUser }) {
-  //using state variables for access of the input fields
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  //function for dynamic change of values for the input fields of name field
-  const handleNameChange = (event) => {
-    setName(event.target.value);
+  const handleNameChange = (e) => setName(e.target.value);
+  const handleEmailChange = (e) => setEmail(e.target.value);
+
+  // Email format validation helper
+  const isValidEmail = (emailStr) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
   };
 
-  //function for dynamic change of values for the input fields of email field
-  const handleEmailChange = (event) => {
-    setEmail(event.target.value);
-  };
+  const handleCreateUser = async (e) => {
+    if (e) e.preventDefault();
 
-  //creation of an async await function which first checks if all the inputs are filled, sends a post request to the server using axios then shows a toast message if is successful or not
-  const handleCreateUser = async () => {
-    //input check
-    if (!name || !email || name === "" || email === "") {
-      toast.error("All Fields Are Required");
+    // Input validations
+    if (!name.trim() || !email.trim()) {
+      toast.error("Please enter both Name and Email");
       return;
     }
 
+    if (name.trim().length < 2) {
+      toast.error("Name must be at least 2 characters long");
+      return;
+    }
+
+    if (!isValidEmail(email.trim())) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    setLoading(true);
     try {
-      //post req to server
-      const res = await axios.post(import.meta.env.VITE_API_URL, {
-        name,
-        email
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const res = await axios.post(apiUrl, {
+        name: name.trim(),
+        email: email.trim()
       });
 
-      //incase of success
       if (res.status === 201) {
-        toast.success("User Created");
-        addUser(res.data); // add the new user to the list
-        setName(""); //empty the fields after successful operation
-        setEmail(""); //empty the fields after successful operation
+        toast.success(`User "${res.data.name}" Created Successfully`);
+        addUser(res.data); // Dynamic update without full page refresh!
+        setName("");
+        setEmail("");
+
+        // Close modal programmatically if bootstrap is loaded
+        const modalElement = document.getElementById("CreateUserModal");
+        if (window.bootstrap && modalElement) {
+          const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
+          if (modalInstance) modalInstance.hide();
+        }
       }
     } catch (error) {
-      //incase of error
       console.error("Error Creating User: ", error);
-      toast.error("Error Creating User");
+      if (error.response && error.response.status === 409) {
+        toast.error("A user with this email address already exists");
+      } else {
+        toast.error("Failed to create user. Verify backend status.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  //using bootstrap pre built components
   return (
     <>
       <button
         type="button"
-        className="btn btn-success"
+        className="btn-primary-custom"
         data-bs-toggle="modal"
-        id="button"
         data-bs-target="#CreateUserModal"
       >
-        <b>Create User</b>
+        <UserPlus size={18} />
+        <span>Create User</span>
       </button>
 
       <div
@@ -71,9 +90,9 @@ function CreateUserModal({ addUser }) {
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <div className="modal-header">
-              <h1 className="modal-title fs-5" id="CreateUserModalLabel">
-                <b>Enter Name and Email</b>
-              </h1>
+              <h5 className="modal-title" id="CreateUserModalLabel" style={{ fontWeight: "700" }}>
+                Add New User
+              </h5>
               <button
                 type="button"
                 className="btn-close"
@@ -81,44 +100,58 @@ function CreateUserModal({ addUser }) {
                 aria-label="Close"
               ></button>
             </div>
-            <div className="modal-body">
-              <div className="mb-3">
-                <label htmlFor="name" className="form-label">
-                  Name:
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="name"
-                  placeholder="Ex: John Doe"
-                  value={name}
-                  onChange={handleNameChange}
-                />
+            <form onSubmit={handleCreateUser}>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <label htmlFor="create-name" className="form-label">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="create-name"
+                    placeholder="Ex: John Doe"
+                    value={name}
+                    onChange={handleNameChange}
+                    autoComplete="off"
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="create-email" className="form-label">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    id="create-email"
+                    placeholder="Ex: johndoe@gmail.com"
+                    value={email}
+                    onChange={handleEmailChange}
+                    autoComplete="off"
+                    required
+                  />
+                </div>
               </div>
-              <div className="mb-3">
-                <label htmlFor="email" className="form-label">
-                  Email:
-                </label>
-                <input
-                  type="email"
-                  className="form-control"
-                  id="email"
-                  placeholder="Ex: johndoe@gmail.com"
-                  value={email}
-                  onChange={handleEmailChange}
-                />
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  data-bs-dismiss="modal"
+                  style={{ borderRadius: "10px" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-success"
+                  style={{ borderRadius: "10px", minWidth: "120px" }}
+                  disabled={loading}
+                >
+                  {loading ? "Creating..." : "Save User"}
+                </button>
               </div>
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-success"
-                onClick={handleCreateUser}
-                data-bs-dismiss="modal"
-              >
-                <b>Create User</b>
-              </button>
-            </div>
+            </form>
           </div>
         </div>
       </div>
@@ -126,5 +159,4 @@ function CreateUserModal({ addUser }) {
   );
 }
 
-//exporting the created function
 export default CreateUserModal;

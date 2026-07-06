@@ -1,154 +1,152 @@
-//importing neccessary libraries for this modal which will edit users in the database and we will be using this as a functional component for table
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import axios from "axios";
 
-//starting of the functional component which edits the user in the database
-function EditUserModal() {
-  //using state variables for access of the input fields
-  const [id, setId] = useState("");
+function EditUserModal({ user, onEditSuccess }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  //function for dynamic change of values for the input fields of id field
-  const handleIdChange = (event) => {
-    setId(event.target.value);
+  // Sync state when the selected user prop changes
+  useEffect(() => {
+    if (user) {
+      setName(user.name || "");
+      setEmail(user.email || "");
+    }
+  }, [user]);
+
+  const handleNameChange = (e) => setName(e.target.value);
+  const handleEmailChange = (e) => setEmail(e.target.value);
+
+  const isValidEmail = (emailStr) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
   };
 
-  //function for dynamic change of values for the input fields of name field
-  const handleNameChange = (event) => {
-    setName(event.target.value);
-  };
+  const handleEditUser = async (e) => {
+    if (e) e.preventDefault();
 
-  //function for dynamic change of values for the input fields of email field
-  const handleEmailChange = (event) => {
-    setEmail(event.target.value);
-  };
+    if (!user) return;
 
-  //creation of an async await function which first checks if all the inputs are filled, sends a post request to the server using axios then shows a toast message if is successful or not
-  const handleEditUser = async () => {
-    //input check
-    if (!id || !name || !email || id === "" || name === "" || email === "") {
-      toast.error("All Fields Are Required");
+    if (!name.trim() || !email.trim()) {
+      toast.error("All fields are required");
       return;
     }
+
+    if (!isValidEmail(email.trim())) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    setLoading(true);
     try {
-      //put req to server
-      const res = await axios.put(import.meta.env.VITE_API_URL, {
-        id,
-        name,
-        email
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const res = await axios.put(apiUrl, {
+        id: user.id,
+        name: name.trim(),
+        email: email.trim(),
       });
 
-      //incase of success
       if (res.status === 200) {
-        toast.success("User Edited || Reloading to Update");
-        setId(""); //empty the fields after successful operation
-        setName(""); //empty the fields after successful operation
-        setEmail(""); //empty the fields after successful operation
+        toast.success(`User updated successfully`);
+        
+        // Notify parent to update local state dynamically
+        onEditSuccess(res.data);
 
-        //after 3 sec reload the page for users to view edit
-        setTimeout(() => {
-          location.reload();
-        }, 3000);
-
+        // Hide bootstrap modal
+        const modalElement = document.getElementById("editUserModal");
+        if (window.bootstrap && modalElement) {
+          const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
+          if (modalInstance) modalInstance.hide();
+        }
       }
     } catch (error) {
-      //incase of error
       console.error("Error Editing User", error);
-      toast.error("Error Editing User");
+      toast.error("Failed to update user details.");
+    } finally {
+      setLoading(false);
     }
   };
-//using bootstrap pre built components
-  return (
-    <>
-      <button
-        type="button"
-        className="btn btn-warning"
-        data-bs-toggle="modal"
-        id="button"
-        data-bs-target="#editUserModal"
-      >
-        <b>Edit User</b>
-      </button>
 
-      <div
-        className="modal fade"
-        id="editUserModal"
-        tabIndex="-1"
-        aria-labelledby="EditUserModal"
-        aria-hidden="true"
-      >
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h1 className="modal-title fs-5" id="EditUserModal">
-                <b>Enter Id, Name and Email</b>
-              </h1>
-              <button
-                type="button"
-                className="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              ></button>
-            </div>
+  return (
+    <div
+      className="modal fade"
+      id="editUserModal"
+      tabIndex="-1"
+      aria-labelledby="editUserModalLabel"
+      aria-hidden="true"
+    >
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title" id="editUserModalLabel" style={{ fontWeight: "700" }}>
+              Edit User Settings
+            </h5>
+            <button
+              type="button"
+              className="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <form onSubmit={handleEditUser}>
             <div className="modal-body">
               <div className="mb-3">
-                <label htmlFor="id" className="form-label">
-                  Id:
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="id"
-                  placeholder="Ex: 12"
-                  value={id}
-                  onChange={handleIdChange}
-                />
+                <span className="text-secondary" style={{ fontSize: "0.85rem", fontWeight: "600" }}>
+                  Editing User ID: <span className="id-badge">{user?.id || "--"}</span>
+                </span>
               </div>
               <div className="mb-3">
-                <label htmlFor="name" className="form-label">
-                  New Name:
+                <label htmlFor="edit-name" className="form-label">
+                  Update Name
                 </label>
                 <input
                   type="text"
                   className="form-control"
-                  id="name"
-                  placeholder="Ex: John Doe"
+                  id="edit-name"
                   value={name}
                   onChange={handleNameChange}
+                  required
+                  autoComplete="off"
                 />
               </div>
               <div className="mb-3">
-                <label htmlFor="email" className="form-label">
-                  New Email:
+                <label htmlFor="edit-email" className="form-label">
+                  Update Email
                 </label>
                 <input
                   type="email"
                   className="form-control"
-                  id="email"
-                  placeholder="Ex: johndoe@gmail.com"
+                  id="edit-email"
                   value={email}
                   onChange={handleEmailChange}
+                  required
+                  autoComplete="off"
                 />
               </div>
             </div>
             <div className="modal-footer">
               <button
                 type="button"
-                className="btn btn-warning"
-                onClick={handleEditUser}
+                className="btn btn-secondary"
                 data-bs-dismiss="modal"
+                style={{ borderRadius: "10px" }}
               >
-                <b>Edit User</b>
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-warning"
+                style={{ borderRadius: "10px", minWidth: "120px", color: "#000", fontWeight: "600" }}
+                disabled={loading}
+              >
+                {loading ? "Updating..." : "Save Changes"}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
-//exporting the created function
 export default EditUserModal;
